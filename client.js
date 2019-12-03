@@ -5,6 +5,7 @@ let Client = class Client {
     chokidar = require('chokidar');
     fs = require('fs');
 
+    serverSMTP = require('./serverSMTP');
     endpoint = "http://localhost:8899/";
     socket = {};
     clientName = "";
@@ -37,8 +38,14 @@ let Client = class Client {
     enviarEmail = (action, file) => {
         switch(action){
             case 'pingError':
+                subject = "Erro de comunicação!";
+                corpoMsg = "Houve um erro ao comunicar-se com o sistema.";
+                serverSMTP.sendEmail();
                 break;
             case 'newFile':
+                subject = "Novo arquivo!";
+                corpoMsg = "O arquivo " + file + " foi criado às " + data;
+                serverSMTP.sendEmail();
                 break;
             case 'modifyFile':
                 break;

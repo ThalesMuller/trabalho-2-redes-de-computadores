@@ -22,6 +22,6 @@ Desenvolver uma aplicação cliente servidor utilizando sockets (TCP e UDP) em l
 
 #### Alunos:
 - Eduardo Brum Meurer
-- Igor Matheus Giacobi
+- Igor Mateus Giacobe
 - João Carlos Ilha Baierle
 - Thales Eduardo Müller

@@ -1,40 +1,39 @@
-//Importações de bibliotecas e componentes
-import socketIOClient from 'socket.io-client';
+let chokidar = require('chokidar');
+let socketIOClient = require('socket.io-client');
+let fs = require('fs');
+let = serverSMTP = require('./serverSMTP');
 
-let Client = class Client {
-    chokidar = require('chokidar');
-    fs = require('fs');
-
-    serverSMTP = require('./serverSMTP');
-    endpoint = "http://localhost:8899/";
-    socket = {};
-    clientName = "";
-    folderName = "";
-    serverFilesList = [];
-
-    constructor() {
-        this.clientName = readline();
+let Client = class {
+    constructor(name) {
+        this.endpoint = "http://localhost:8899/";
+        this.clientName = name;
         this.folderName = this.createFolder();
 
-        this.socket = socketIOClient(this.state.endpoint);
+        socket = socketIOClient(this.state.endpoint);
 
-        this.socket.on('connect', function () {
-            this.socket.emit('newClient', this.clientName)
+        socket.on('connect', function () {
+            socket.emit('newClient', this.clientName)
             this.createServerSideFolder();
             //this.serverFilesList = this.getServerFilesList();
         });
     }
 
-    pingServer = () => {
+    pingServer() {
         //pinga o server pra ver se esta online, envia email por smtp se estiver fora
+        socket.emit('ping');
 
-        this.socket.emit('ping');
-        if (!ping)
-            this.enviarEmail('pingError');
+        let ping;
+
+        socket.on('pong', () => {
+            ping = true;
+        }, ping = false);
+
+        if (!ping) this.enviarEmail('pingError');
+
         return ping;
     }
 
-    enviarEmail = (action, file, dthr) => {
+    enviarEmail(action, file, dthr) {
         switch (action) {
             case 'pingError':
                 subject = "Erro de comunicação!";
@@ -57,32 +56,32 @@ let Client = class Client {
         }
     }
 
-    createFolder = () => {
+    createFolder() {
         let folderName = this.clientName.replace(' ', '_') + '_files';
 
-        this.fs.mkdir(`/clientSideFolders/${folderName}`);
+        fs.mkdir(`/clientSideFolders/${folderName}`);
 
         return folderName;
     }
 
-    createServerSideFolder = () => {
-        this.socket.emit('createfolder', this.folderName);
+    createServerSideFolder() {
+        socket.emit('createfolder', this.folderName);
     }
 
-    getServerFilesList = () => {
-        this.socket.emit('getfilesdata');
+    getServerFilesList() {
+        socket.emit('getfilesdata');
 
-        this.socket.on('sendfiledata', (sender, content) => {
+        socket.on('sendfiledata', (sender, content) => {
             content.forEach(file => {
                 //
             });
         });
-    
-        
+
+
     }
 
-    folderListener = () => {
-        watcher = this.chokidar.watch(`/clientSideFolders/${this.folderName}`, { ignored: /^\./, persistent: true });
+    folderListener() {
+        watcher = chokidar.watch(`/clientSideFolders/${this.folderName}`, { ignored: /^\./, persistent: true });
 
         watcher
             .on('add', function (path) { this.fileCreated(path); })
@@ -94,7 +93,7 @@ let Client = class Client {
         this.folderListener();
     }
 
-    fileCreated = (path) => {
+    fileCreated(path) {
         let splitPath = path.split('/');
         let fileName = splitPath[splitPath.lenght() - 1];
 
@@ -104,17 +103,17 @@ let Client = class Client {
         });
         let creationDthr = new Date().toString();
 
-        this.socket.emit('createfile', fileName, content, creationDthr);
+        socket.emit('createfile', fileName, content, creationDthr);
     }
 
-    fileDeleted = (path) => {
+    fileDeleted(path) {
         let splitPath = path.split('/');
         let fileName = splitPath[splitPath.lenght() - 1];
 
-        this.socket.emit('modifyfile', fileName);
+        socket.emit('modifyfile', fileName);
     }
 
-    fileModified = (path) => {
+    fileModified(path) {
         let splitPath = path.split('/');
         let fileName = splitPath[splitPath.lenght() - 1];
 
@@ -124,11 +123,13 @@ let Client = class Client {
         });
         let modifyDthr = new Date().toString();
 
-        this.socket.emit('deletefile', fileName, newContent, modifyDthr);
+        socket.emit('deletefile', fileName, newContent, modifyDthr);
         this.enviarEmail('newFile', fileName, modifyDthr)
     }
 
-    watcherError = (error) => {
+    watcherError(error) {
         console.error("Erro no watcher: " + error);
     }
-} 
+}
+
+const client = new Client("thales");

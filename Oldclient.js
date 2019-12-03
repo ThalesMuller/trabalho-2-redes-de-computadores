@@ -10,7 +10,7 @@ const state = {
 }
 
 //Função que estabelece a conexão socket com o server e emite mensagem com nickname do novo client
-/* loginEmit = (name) => {
+ loginEmit = (name) => {
   //Define nickname do novo usuario
   this.setState({
     thisUser: name
@@ -35,7 +35,7 @@ const state = {
       });
     });
 }
- */
+ 
 //Função responsavel por emitir uma mensagem digitada pelo user para o servidor
 messageEmit = (msgData) => {
   //Objeto msg contem dados da mensagem

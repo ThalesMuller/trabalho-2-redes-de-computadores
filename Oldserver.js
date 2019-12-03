@@ -5,7 +5,7 @@ let express = require('express');
 let socketio = require('socket.io');
 //Arquivos do servidor
 let serverInfo = require('./serverInfo');
-let msgHandler = require('./msgHandler');
+//let msgHandler = require('./msgHandler');
 //Biblioteca nativa para pegar informações sobre o host
 let os = require('os');
 

@@ -28,11 +28,9 @@ let Client = class Client {
     pingServer = () => {
         //pinga o server pra ver se esta online, envia email por smtp se estiver fora
 
-        let ping = true;
-
+        this.socket.emit('ping');
         if (!ping)
             this.enviarEmail('pingError');
-
         return ping;
     }
 

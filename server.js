@@ -28,8 +28,29 @@ io.sockets.on('connection', socket => {
 	console.log(`Connected: ${socket.id}`);
 
 
+	socket.on('create_folder', (clientName) => {
+		var fs  = require('fs');
+		var dir = './tmp';
+
+		if (!fs.existsSync(dir)){
+			fs.mkdirSync(dir);
+		};
+		socket.broadcast.emit('msglistupdate', { sender: '', text: `Pasta criada!` });
+	});
+
+	socket.on('receive_file', (clientName) => {
+		socket.broadcast.emit('msglistupdate', { sender: '', text: `Arquivo recebido!` });
+	});
+
+	socket.on('delete-file', (clientName) => {
+		socket.broadcast.emit('msglistupdate', { sender: '', text: `Arquivo deletado!` });
+	});
+
+
 	//Event listener que espera eventos getfilesdata, retorna a lista de arquivos armazendos
 	socket.on('getfilesdata', (clientName) => {
+		
+
 		//socket.broadcast.emit('msglistupdate', { sender: '', text: `${socket.nickname} entrou!` });
 	});
 
@@ -74,20 +95,3 @@ io.sockets.on('connection', socket => {
 		io.emit('userlistupdate', users);
 	}) */
 });
-
-function create_folder(dir){
-    var fs = require('fs');
-
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
-    }
-}
-
-function receive_file(){
-    console.log("Recebeu");
-}
-
-function delete_file(){
-    console.log("Deletou");
-}
-

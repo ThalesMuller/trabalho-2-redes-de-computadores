@@ -35,15 +35,15 @@ io.sockets.on('connection', socket => {
 		if (!fs.existsSync(dir)){
 			fs.mkdirSync(dir);
 		};
-		socket.broadcast.emit('msglistupdate', { sender: '', text: `Pasta criada!` });
+		socket.emit('msglistupdate', { sender: '', text: `Pasta criada!` });
 	});
 
 	socket.on('receive_file', (clientName) => {
-		socket.broadcast.emit('msglistupdate', { sender: '', text: `Arquivo recebido!` });
+		socket.emit('msglistupdate', { sender: '', text: `Arquivo recebido!` });
 	});
 
 	socket.on('delete-file', (clientName) => {
-		socket.broadcast.emit('msglistupdate', { sender: '', text: `Arquivo deletado!` });
+		socket.emit('msglistupdate', { sender: '', text: `Arquivo deletado!` });
 	});
 
 

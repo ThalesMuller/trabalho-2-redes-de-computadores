@@ -18,7 +18,8 @@ let Client = class Client {
 
         this.socket = socketIOClient(this.state.endpoint);
 
-        this.socket.on('connect', function () { 
+        this.socket.on('connect', function () {
+            this.socket.emit('newClient', this.clientName)
             this.createServerSideFolder();
             this.serverFilesList = this.getServerFilesList();
         });
@@ -31,12 +32,12 @@ let Client = class Client {
 
         if (!ping)
             this.enviarEmail('pingError');
-            
+
         return ping;
     }
 
-    enviarEmail = (action, file) => {
-        switch(action){
+    enviarEmail = (action, file, dthr) => {
+        switch (action) {
             case 'pingError':
                 subject = "Erro de comunicação!";
                 corpoMsg = "Houve um erro ao comunicar-se com o sistema.";
@@ -44,14 +45,16 @@ let Client = class Client {
                 break;
             case 'newFile':
                 subject = "Novo arquivo!";
-                corpoMsg = "O arquivo " + file + " foi criado às " + data;
+                corpoMsg = "O arquivo " + file + " foi criado às " + dthr;
                 serverSMTP.sendEmail();
                 break;
             case 'modifyFile':
-                break;
-            case 'deleteFile':
+                subject = "Arquivo modificado!";
+                corpoMsg = "O arquivo " + file + " foi modificado às " + dthr;
+                serverSMTP.sendEmail();
                 break;
             default:
+                console.error("Algum erro aconteceu no switch bocó");
                 break;
         }
     }
@@ -65,7 +68,7 @@ let Client = class Client {
     }
 
     createServerSideFolder = () => {
-        this.socket.emit('createbkpfolder', this.folderName);
+        this.socket.emit('createfolder', this.folderName);
     }
 
     getServerFilesList = () => {
@@ -75,13 +78,51 @@ let Client = class Client {
     folderListener = () => {
         watcher = this.chokidar.watch(`/clientSideFolders/${this.folderName}`, { ignored: /^\./, persistent: true });
 
-        watcher.on('add', function (path) { console.log('File', path, 'has been added'); })
-        watcher.on('change', function (path) { console.log('File', path, 'has been changed'); })
-        watcher.on('unlink', function (path) { console.log('File', path, 'has been removed'); })
-        watcher.on('error', function (error) { console.error('Error happened', error); })
-
+        watcher
+            .on('add', function (path) { this.fileCreated(path); })
+            .on('change', function (path) { this.fileModified(path); })
+            .on('unlink', function (path) { this.fileDeleted(path); })
+            .on('error', function (error) { this.watcherError(error); });
 
         //recursive infinite loop to watch folder
         this.folderListener();
+    }
+
+    fileCreated = (path) => {
+        let splitPath = path.split('/');
+        let fileName = splitPath[splitPath.lenght() - 1];
+
+        let content = fs.readFile(path, (err, data) => {
+            if (err) throw err;
+            return data.toString('base64');
+        });
+        let creationDthr = new Date().toString();
+
+        this.socket.emit('createfile', fileName, content, creationDthr);
+    }
+
+    fileDeleted = (path) => {
+        let splitPath = path.split('/');
+        let fileName = splitPath[splitPath.lenght() - 1];
+
+        this.socket.emit('modifyfile', fileName);
+    }
+
+    fileModified = (path) => {
+        let splitPath = path.split('/');
+        let fileName = splitPath[splitPath.lenght() - 1];
+
+        let newContent = fs.readFile(path, (err, data) => {
+            if (err) throw err;
+            return data.toString('base64');
+        });
+        let modifyDthr = new Date().toString();
+
+        this.socket.emit('deletefile', fileName, newContent, modifyDthr);
+        this.enviarEmail('newFile', fileName, modifyDthr)
+    }
+
+    watcherError = (error) => {
+        console.error("Erro no watcher: " + error);
     }
 } 

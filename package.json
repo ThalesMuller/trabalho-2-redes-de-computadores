@@ -5,7 +5,10 @@
   "dependencies": {
     "express": "^4.16.4",
     "getmac": "^1.4.6",
+    "googleapis": "^39.2.0",
     "ip": "^1.1.5",
+    "js-base64": "^2.5.1",
+    "nodemailer": "^6.3.1",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1"
   },

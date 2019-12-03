@@ -21,7 +21,7 @@ let Client = class Client {
         this.socket.on('connect', function () {
             this.socket.emit('newClient', this.clientName)
             this.createServerSideFolder();
-            this.serverFilesList = this.getServerFilesList();
+            //this.serverFilesList = this.getServerFilesList();
         });
     }
 
@@ -72,7 +72,15 @@ let Client = class Client {
     }
 
     getServerFilesList = () => {
-        this.socket.emit('getfilesdata', this.clientName);
+        this.socket.emit('getfilesdata');
+
+        this.socket.on('sendfiledata', (sender, content) => {
+            content.forEach(file => {
+                //
+            });
+        });
+    
+        
     }
 
     folderListener = () => {

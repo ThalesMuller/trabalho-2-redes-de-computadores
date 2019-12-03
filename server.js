@@ -74,3 +74,20 @@ io.sockets.on('connection', socket => {
 		io.emit('userlistupdate', users);
 	}) */
 });
+
+function create_folder(dir){
+    var fs = require('fs');
+
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir);
+    }
+}
+
+function receive_file(){
+    console.log("Recebeu");
+}
+
+function delete_file(){
+    console.log("Deletou");
+}
+

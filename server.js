@@ -29,7 +29,7 @@ io.sockets.on('connection', socket => {
 
 
 	//Event listener que espera eventos getfilesdata, retorna a lista de arquivos armazendos
-	socket.on('getfilesdata', (user) => {
+	socket.on('getfilesdata', (clientName) => {
 		//socket.broadcast.emit('msglistupdate', { sender: '', text: `${socket.nickname} entrou!` });
 	});
 

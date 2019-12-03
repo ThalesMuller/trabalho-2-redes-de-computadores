@@ -28,21 +28,20 @@ io.sockets.on('connection', socket => {
 	console.log(`Connected: ${socket.id}`);
 
 
-	socket.on('create_folder', (clientName) => {
+	socket.on('create_folder', (dir) => {
 		var fs  = require('fs');
-		var dir = './tmp';
 
-		if (!fs.existsSync(dir)){
+		if (!fs.existsSync(dir)){	
 			fs.mkdirSync(dir);
 		};
 		socket.emit('msglistupdate', { sender: '', text: `Pasta criada!` });
 	});
 
-	socket.on('receive_file', (clientName) => {
+	socket.on('receive_file', (filename, id, content, ins_dthr) => {
 		socket.emit('msglistupdate', { sender: '', text: `Arquivo recebido!` });
 	});
 
-	socket.on('delete-file', (clientName) => {
+	socket.on('delete_file', (filename, id) => {
 		socket.emit('msglistupdate', { sender: '', text: `Arquivo deletado!` });
 	});
 

@@ -6,6 +6,19 @@ const socket = require('socket.io-client')(endpoint);
 const fs = require('fs');
 const serverSMTP = require('./serverSMTP');
 
+let {
+    CREATE_FOLDER,
+    NEW_CLIENT,
+    CREATE_FILE,
+    MODIFY_FILE,
+    DELETED_FILE,
+    GET_FILES_DATA,
+    SEND_FILES_DATA,
+    PING,
+    PONG,
+    PING_ERROR
+} = require("./commands");
+
 class Client {
 
     constructor(name) {
@@ -14,47 +27,50 @@ class Client {
 
         fs.access('clientSideFolders/', fs.constants.F_OK, (err) => { err ? fs.mkdir("clientSideFolders/") : true });
 
-        socket.emit('newClient', this.clientName);
+        socket.emit(NEW_CLIENT, this.clientName);
         this.createServerSideFolder();
         //this.serverFilesList = this.getServerFilesList();
         this.folderListener();
     }
 
     createServerSideFolder() {
-        socket.emit('createfolder', this.folderName);
+        socket.emit(CREATE_FOLDER, this.folderName);
     }
 
     pingServer() {
         //pinga o server pra ver se esta online, envia email por smtp se estiver fora
-        socket.emit('ping');
+        socket.emit(PING);
 
         let ping;
 
-        socket.on('pong', () => {
+        socket.on(PONG, () => {
             ping = true;
         }, ping = false);
 
-        if (!ping) this.enviarEmail('pingError');
+        if (!ping) this.enviarEmail(PING_ERROR);
 
         return ping;
     }
 
     enviarEmail(action, file, dthr) {
+        let subject;
+        let corpoMsg;
+
         switch (action) {
-            case 'pingError':
+            case PING_ERROR:
                 subject = "Erro de comunicação!";
                 corpoMsg = "Houve um erro ao comunicar-se com o sistema.";
-                serverSMTP.sendEmail();
+                serverSMTP.sendEmail(subject, corpoMsg);
                 break;
-            case 'newFile':
+            case NEW_CLIENT:
                 subject = "Novo arquivo!";
                 corpoMsg = "O arquivo " + file + " foi criado às " + dthr;
-                serverSMTP.sendEmail();
+                serverSMTP.sendEmail(subject, corpoMsg);
                 break;
-            case 'modifyFile':
-                subject = "Arquivo modificado!";
+            case MODIFY_FILE:
+                let subject = "Arquivo modificado!";
                 corpoMsg = "O arquivo " + file + " foi modificado às " + dthr;
-                serverSMTP.sendEmail();
+                serverSMTP.sendEmail(subject, corpoMsg);
                 break;
             default:
                 console.error("Algum erro aconteceu no switch bocó");
@@ -72,9 +88,9 @@ class Client {
 
 
     getServerFilesList() {
-        socket.emit('getfilesdata');
+        socket.emit(GET_FILES_DATA);
 
-        socket.on('sendfiledata', (sender, content) => {
+        socket.on(SEND_FILES_DATA, (sender, content) => {
             content.forEach(file => {
                 //
             });
@@ -99,7 +115,8 @@ class Client {
 
         fs.readFile(path, (err, data) => {
             if (err) throw err;
-            socket.emit('createfile', fileName, data.toString('base64'), creationDthr);
+            socket.emit(CREATE_FILE, fileName, data.toString('base64'), creationDthr);
+            this.enviarEmail(commands.getNewFile(), fileName, creationDthr)
         });
     }
 
@@ -107,7 +124,7 @@ class Client {
         let splitPath = path.split(/\\+/g);;
         let fileName = splitPath[splitPath.length - 1];
 
-        socket.emit('modifyfile', fileName);
+        socket.emit(DELETED_FILE, fileName);
     }
 
     fileModified(path) {
@@ -117,8 +134,8 @@ class Client {
 
         fs.readFile(path, (err, data) => {
             if (err) throw err;
-            socket.emit('deletefile', fileName, data.toString('base64'), modifyDthr);
-            this.enviarEmail('newFile', fileName, modifyDthr)
+            socket.emit(MODIFY_FILE, fileName, data.toString('base64'), modifyDthr);
+            this.enviarEmail(MODIFY_FILE, fileName, modifyDthr)
         });
     }
 

@@ -1,53 +1,59 @@
-//Express: framwork para criação do servidor NodeJS
-let express = require('express');
-//SocketIO: biblioteca usada para estabelecer toda a comunicação socket
-let socketio = require('socket.io');
-//Biblioteca nativa para pegar informações sobre o host
-let os = require('os');
-var fs = require('fs');
+let {
+	CONECTION,
+	CREATE_FOLDER,
+	NEW_CLIENT,
+	CREATE_FILE,
+	MODIFY_FILE,
+	DELETED_FILE,
+	GET_FILES_DATA,
+	SEND_FILES_DATA,
+	PING,
+	PONG
+} = require("./commands");
 
-//Cria o servidor com a framework 'Express'
+const PORT = 8899;
+
+let express = require('express');
+let socketio = require('socket.io');
+let fs = require('fs');
 let app = express();
 
 fs.access('backupFolders/', fs.constants.F_OK, (err) => { err ? fs.mkdir("backupFolders/") : true });
 
-//Faz o servidor ouvir requisições na porta retornada do arquivo 'serverInfo' e salva informações na variavel 'server'
-let server = app.listen(serverInfo.getServerPort(), () => {
-	//Mensagem informando que o servidor está ouvindo na porta
-	console.log(`Listening on port ${serverInfo.getServerPort()}`);
+let server = app.listen(PORT, () => {
+	console.log(`Listening on port ${PORT}`);
 });
 
-//Cria objeto io, que será usado para fazer as transmissões de mensagens
 let io = socketio(server);
-//Array auxiliar para guardar os usuários conectados no chat
-let users = [];
 //Event listener para quando um novo client se conecta, objeto 'socket' corresponde a essa conexão
-io.sockets.on('connection', socket => {
+io.sockets.on(CONECTION, socket => {
 	//Loga dados da nova conexão
 	console.log(`Connected: ${socket.id}`);
 
-	socket.on('createfolder', () => {
-		let path = `backupFolders/${socket.folderName}`
+	socket.on(CREATE_FOLDER, () => {
+		let path = `backupFolders/${socket.folderName}`;
 
 		if (!fs.existsSync(path)) {
 			fs.mkdir(path);
+		}
 
+		if (!fs.existsSync(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`)) {
 			let jsonContent = [];
-			fs.writeFile(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, jsonContent);
-		};
+			fs.writeFileSync(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, JSON.stringify(jsonContent));
+		}
 	});
 
-	socket.on('newClient', (clientName) => {
+	socket.on(NEW_CLIENT, (clientName) => {
 		socket.clientName = clientName;
 		socket.folderName = clientName.replace(' ', '_');
 	});
 
-	socket.on('createfile', (fileName, content, creationDthr) => {
-		let convertedContent = content.toString('ascii');
+	socket.on(CREATE_FILE, (fileName, content, creationDthr) => {
+		let convertedContent = new Buffer(content, 'base64');
 
-		fs.writeFile(`backupFolders/${socket.folderName}/${fileName}`, convertedContent, (err) => {
+		fs.writeFile(`backupFolders/${socket.folderName}/${fileName}`, convertedContent, async (err) => {
 			if (err) throw err;
-			let controlJson = getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`);
+			/* let controlJson = await getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`);
 
 			controlJson.push({
 				name: fileName,
@@ -56,67 +62,68 @@ io.sockets.on('connection', socket => {
 				dataUltimaModificacao: ""
 			});
 
-			setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, controlJson);
+			setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, controlJson); */
 		});
 
 	});
 
-	socket.on('modifyfile', (fileName, newContent, modifyDthr) => {
-		let convertedContent = newContent.toString('ascii');
+	socket.on(MODIFY_FILE, (fileName, newContent, modifyDthr) => {
+		let convertedContent = new Buffer(newContent, 'base64');
 
 		fs.writeFile(`backupFolders/${socket.folderName}/${fileName}`, convertedContent, (err) => {
 			if (err) throw err;
-			let controlJson = getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`);
+			/* getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, (data) => {
+				let controlJson = data;
+				currentFile = controlJson.filter(r => r.name == fileName)[0];
+				currentFileIndex = controlJson.IndexOf(currentFile);
 
-			currentFile = controlJson.filter(r => r.name == fileName)[0];
-			currentFileIndex = controlJson.IndexOf(currentFile);
+				currentFile.push({
+					name: currentFile.name,
+					path: currentFile.path,
+					dataCricao: currentFile.dataCricao,
+					dataUltimaModificacao: modifyDthr
+				});
 
-			currentFile.push({
-				name: currentFile.name,
-				path: currentFile.path,
-				dataCricao: currentFile.dataCricao,
-				dataUltimaModificacao: modifyDthr
-			});
+				controlJson[currentFileIndex] = currentFile;
 
-			controlJson[currentFileIndex] = currentFile;
+				setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, controlJson); 
+			});*/
 
-			setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, controlJson);
 		});
 	});
 
-	socket.on('ping', () => {
-		socket.emit('pong', { sender: socket.clientName, text: `bong bong` })
-	});
-
-	socket.on('deletefile', (fileName) => {
-		fs.unlink(`backupFolders/${socket.folderName}/${fileName}`, (err) => {
+	socket.on(DELETED_FILE, (fileName) => {
+		fs.unlink(`backupFolders/${socket.folderName}/${fileName}`, async (err) => {
 			if (err) throw err;
 
-			let content = getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`);
+			/* let content = await getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`);
 			content.splice(content.filter(r => r.fileName == fileName)[0], 1);
 
-			setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, content)
+			setControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`, content) */
 		});
 	});
 
-	//Event listener que espera eventos getfilesdata, retorna a lista de arquivos armazendos
-	socket.on('getfilesdata', () => {
-		let content = getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`)
+	socket.on(GET_FILES_DATA, async () => {
+		let content = await getControlJsonData(`backupFolders/${socket.folderName}/${socket.folderName}_fileControl.json`)
 		content = content.toString('base64');
 
-		socket.emit('sendfiledata', { content: content });
+		socket.emit(SEND_FILES_DATA, { content: content });
+	});
+
+	socket.on(PING, () => {
+		socket.emit(PONG, { sender: socket.clientName, text: `bong bong` })
 	});
 });
 
-getControlJsonData = (path) => {
-	return fs.readFile(path, (err, data) => {
+async function getControlJsonData(path, callback) {
+	fs.readFile(path, (err, data) => {
 		if (err) throw err;
-		return data;
+		callback(null, JSON.parse(data));
 	});
 }
 
-setControlJsonData = (path, content) => {
-	fs.writeFile(path, content, (err) => {
+async function setControlJsonData(path, content) {
+	fs.writeFile(path, JSON.stringify(content), (err) => {
 		if (err) throw err;
 	});
 }

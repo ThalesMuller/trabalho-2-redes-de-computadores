@@ -7,11 +7,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Executar Programa",
+            "name": "Cliente",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\client.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Servidor",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\server.js"
         }
     ]
 }

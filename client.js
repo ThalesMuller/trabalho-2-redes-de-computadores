@@ -144,4 +144,4 @@ class Client {
     }
 }
 
-const client = new Client("thales");
+const thales = new Client("Thales");

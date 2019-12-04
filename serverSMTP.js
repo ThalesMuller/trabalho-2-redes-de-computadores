@@ -3,14 +3,15 @@ module.exports = {
 
     let nodemailer = require('nodemailer');
 
-    let email = "rededecomputadoresprojeto@gmail.com";
-    let admEmail = 'thales.em@gmail.com';
+    let email = ""; //Insira o email de serviço
+    let pass = ""; //Insira a senha do email de serviço
+    let admEmail = ""; //Insira o email do Administrador que ira receber os e-mails de aviso
 
     let transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: email,
-        pass: 'brunnoehtop'
+        pass: pass
       }
     });
 

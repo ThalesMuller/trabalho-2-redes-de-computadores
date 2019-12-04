@@ -1,5 +1,16 @@
 Este trabalho foi desenvolvido na disciplina de redes de computadores na Universidade de Santa Cruz do Sul (UNISC)
 
+#### Requisitos mínimos:
+- node versão 6.9
+
+#### Para executar o trabalho:
+- Execute o comando `npm i` para instalar as dependências;
+- Execute o comando `npm start` rodar o servidor;
+- Execute o comando `node client` para rodar o client;  
+
+_Obs.: Você pode adicionar mais clients chamando a classe **Client** no `client.js`_  
+  
+
 #### Objetivo:
 Desenvolver uma aplicação cliente servidor utilizando sockets (TCP e UDP) em linguagem a sua escolha que deverá realizar as seguintes tarefas:
 1. Manter um backup remoto atualizado e sincronizado entre cliente e servidor de todos os arquivos que forem criados, alterados ou excluídos em uma pasta especificada. 

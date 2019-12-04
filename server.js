@@ -1,16 +1,15 @@
-//Requisição de bibliotecas necessárias
 //Express: framwork para criação do servidor NodeJS
 let express = require('express');
 //SocketIO: biblioteca usada para estabelecer toda a comunicação socket
 let socketio = require('socket.io');
-//Arquivos do servidor
-let serverInfo = require('./serverInfo');
 //Biblioteca nativa para pegar informações sobre o host
 let os = require('os');
 var fs = require('fs');
 
 //Cria o servidor com a framework 'Express'
 let app = express();
+
+fs.access('backupFolders/', fs.constants.F_OK, (err) => { err ? fs.mkdir("backupFolders/") : true });
 
 //Faz o servidor ouvir requisições na porta retornada do arquivo 'serverInfo' e salva informações na variavel 'server'
 let server = app.listen(serverInfo.getServerPort(), () => {

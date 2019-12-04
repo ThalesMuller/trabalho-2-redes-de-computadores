@@ -1,21 +1,27 @@
-let chokidar = require('chokidar');
-let socketIOClient = require('socket.io-client');
-let fs = require('fs');
-let = serverSMTP = require('./serverSMTP');
+"use strict";
 
-let Client = class {
+const chokidar = require('chokidar');
+const endpoint = "http://localhost:8899/";
+const socket = require('socket.io-client')(endpoint);
+const fs = require('fs');
+const serverSMTP = require('./serverSMTP');
+
+class Client {
+
     constructor(name) {
-        this.endpoint = "http://localhost:8899/";
         this.clientName = name;
         this.folderName = this.createFolder();
 
-        socket = socketIOClient(this.state.endpoint);
+        fs.access('clientSideFolders/', fs.constants.F_OK, (err) => { err ? fs.mkdir("clientSideFolders/") : true });
 
-        socket.on('connect', function () {
-            socket.emit('newClient', this.clientName)
-            this.createServerSideFolder();
-            //this.serverFilesList = this.getServerFilesList();
-        });
+        socket.emit('newClient', this.clientName);
+        this.createServerSideFolder();
+        //this.serverFilesList = this.getServerFilesList();
+        this.folderListener();
+    }
+
+    createServerSideFolder() {
+        socket.emit('createfolder', this.folderName);
     }
 
     pingServer() {
@@ -59,14 +65,11 @@ let Client = class {
     createFolder() {
         let folderName = this.clientName.replace(' ', '_') + '_files';
 
-        fs.mkdir(`/clientSideFolders/${folderName}`);
+        fs.access(`./clientSideFolders/${folderName}`, fs.constants.F_OK, (err) => { err ? fs.mkdir(`./clientSideFolders/${folderName}`) : true });
 
         return folderName;
     }
 
-    createServerSideFolder() {
-        socket.emit('createfolder', this.folderName);
-    }
 
     getServerFilesList() {
         socket.emit('getfilesdata');
@@ -76,55 +79,47 @@ let Client = class {
                 //
             });
         });
-
-
     }
 
     folderListener() {
-        watcher = chokidar.watch(`/clientSideFolders/${this.folderName}`, { ignored: /^\./, persistent: true });
+        let watcher = chokidar.watch(`./clientSideFolders/${this.folderName}/*`, { persistent: true, ignoreInitial: true });
+
 
         watcher
-            .on('add', function (path) { this.fileCreated(path); })
-            .on('change', function (path) { this.fileModified(path); })
-            .on('unlink', function (path) { this.fileDeleted(path); })
-            .on('error', function (error) { this.watcherError(error); });
-
-        //recursive infinite loop to watch folder
-        this.folderListener();
+            .on('add', path => { this.fileCreated(path); })
+            .on('change', path => { this.fileModified(path); })
+            .on('unlink', path => { this.fileDeleted(path); })
+            .on('error', error => { this.watcherError(error); });
     }
 
     fileCreated(path) {
-        let splitPath = path.split('/');
-        let fileName = splitPath[splitPath.lenght() - 1];
-
-        let content = fs.readFile(path, (err, data) => {
-            if (err) throw err;
-            return data.toString('base64');
-        });
+        let splitPath = path.split(/\\+/g);;
+        let fileName = splitPath[splitPath.length - 1];
         let creationDthr = new Date().toString();
 
-        socket.emit('createfile', fileName, content, creationDthr);
+        fs.readFile(path, (err, data) => {
+            if (err) throw err;
+            socket.emit('createfile', fileName, data.toString('base64'), creationDthr);
+        });
     }
 
     fileDeleted(path) {
-        let splitPath = path.split('/');
-        let fileName = splitPath[splitPath.lenght() - 1];
+        let splitPath = path.split(/\\+/g);;
+        let fileName = splitPath[splitPath.length - 1];
 
         socket.emit('modifyfile', fileName);
     }
 
     fileModified(path) {
-        let splitPath = path.split('/');
-        let fileName = splitPath[splitPath.lenght() - 1];
-
-        let newContent = fs.readFile(path, (err, data) => {
-            if (err) throw err;
-            return data.toString('base64');
-        });
+        let splitPath = path.split(/\\+/g);;
+        let fileName = splitPath[splitPath.length - 1];
         let modifyDthr = new Date().toString();
 
-        socket.emit('deletefile', fileName, newContent, modifyDthr);
-        this.enviarEmail('newFile', fileName, modifyDthr)
+        fs.readFile(path, (err, data) => {
+            if (err) throw err;
+            socket.emit('deletefile', fileName, data.toString('base64'), modifyDthr);
+            this.enviarEmail('newFile', fileName, modifyDthr)
+        });
     }
 
     watcherError(error) {
